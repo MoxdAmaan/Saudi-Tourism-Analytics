@@ -1,6 +1,4 @@
-
 <img width="1512" height="982" alt="110171a0663dfe41675b51755d876a5a36a6ee19" src="https://github.com/user-attachments/assets/a7cb9196-7c18-4e47-8867-7ee181fdeaa7" />
-
 
 # Saudi Tourism Analytics Dashboard (Python | SQL | Tableau)
 
