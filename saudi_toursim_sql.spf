@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>ContentFilters</key>
+	<dict/>
+	<key>auto_connect</key>
+	<true/>
+	<key>data</key>
+	<dict>
+		<key>connection</key>
+		<dict>
+			<key>allowDataLocalInfile</key>
+			<integer>0</integer>
+			<key>database</key>
+			<string>saudi_tourism</string>
+			<key>enableClearTextPlugin</key>
+			<integer>0</integer>
+			<key>host</key>
+			<string>localhost</string>
+			<key>name</key>
+			<string>root@localhost</string>
+			<key>rdbms_type</key>
+			<string>mysql</string>
+			<key>sslCACertFileLocation</key>
+			<string></string>
+			<key>sslCACertFileLocationEnabled</key>
+			<integer>0</integer>
+			<key>sslCertificateFileLocation</key>
+			<string></string>
+			<key>sslCertificateFileLocationEnabled</key>
+			<integer>0</integer>
+			<key>sslKeyFileLocation</key>
+			<string></string>
+			<key>sslKeyFileLocationEnabled</key>
+			<integer>0</integer>
+			<key>type</key>
+			<string>SPTCPIPConnection</string>
+			<key>useSSL</key>
+			<integer>0</integer>
+			<key>user</key>
+			<string>root</string>
+		</dict>
+		<key>session</key>
+		<dict>
+			<key>connectionEncoding</key>
+			<string>utf8mb4</string>
+			<key>contentFilterV2</key>
+			<dict>
+				<key>children</key>
+				<array/>
+				<key>filterClass</key>
+				<string>groupNode</string>
+				<key>isConjunction</key>
+				<true/>
+			</dict>
+			<key>contentPageNumber</key>
+			<integer>1</integer>
+			<key>contentSelection</key>
+			<data>
+			YnBsaXN0MDDUAQIDBAUGBwpYJHZlcnNpb25ZJGFyY2hpdmVyVCR0
+			b3BYJG9iamVjdHMSAAGGoF8QD05TS2V5ZWRBcmNoaXZlctEICVRk
+			YXRhgAGoCwwXGBkaHiVVJG51bGzTDQ4PEBMWV05TLmtleXNaTlMu
+			b2JqZWN0c1YkY2xhc3OiERKAAoADohQVgASABYAHVHR5cGVUcm93
+			c18QHVNlbGVjdGlvbkRldGFpbFR5cGVOU0luZGV4U2V00hsPHB1c
+			TlNSYW5nZUNvdW50EACABtIfICEiWiRjbGFzc25hbWVYJGNsYXNz
+			ZXNaTlNJbmRleFNldKIjJFpOU0luZGV4U2V0WE5TT2JqZWN00h8g
+			JidcTlNEaWN0aW9uYXJ5oiYkAAgAEQAaACQAKQAyADcASQBMAFEA
+			UwBcAGIAaQBxAHwAgwCGAIgAigCNAI8AkQCTAJgAnQC9AMIAzwDR
+			ANMA2ADjAOwA9wD6AQUBDgETASAAAAAAAAACAQAAAAAAAAAoAAAA
+			AAAAAAAAAAAAAAABIw==
+			</data>
+			<key>contentSortColIsAsc</key>
+			<true/>
+			<key>contentViewport</key>
+			<string>{{0, 0}, {693, 473}}</string>
+			<key>isToolbarVisible</key>
+			<true/>
+			<key>queries</key>
+			<string>-- ===============================================================
+-- Saudi Tourism Data Analysis:
+-- ===============================================================
+
+-- Preview data
+SELECT * FROM saudi_tourism;
+
+---------------------------------------------------------------
+-- 1) Total tourists per year: Spot growth/decline trends
+---------------------------------------------------------------
+SELECT
+    year,
+    SUM(Tourists_number) AS tourists_per_year
+FROM saudi_tourism
+GROUP BY year
+ORDER BY tourists_per_year DESC;
+
+---------------------------------------------------------------
+-- 2) Total tourist spending per year: Compare spending trend
+---------------------------------------------------------------
+SELECT
+    year,
+    SUM(tourists_spending) AS total_tourists_spending
+FROM saudi_tourism
+GROUP BY year
+ORDER BY total_tourists_spending DESC;
+
+---------------------------------------------------------------
+-- 3) Average stay length per year
+---------------------------------------------------------------
+SELECT
+    year,
+    SUM(Overnight_Stay) * 1.0 / SUM(Tourists_Number) AS avg_stay_length
+FROM saudi_tourism
+GROUP BY year
+ORDER BY avg_stay_length DESC;
+
+---------------------------------------------------------------
+-- 4) Total tourists by province
+---------------------------------------------------------------
+SELECT
+    province,
+    SUM(tourists_number) AS total_tourists_per_province
+FROM saudi_tourism
+GROUP BY province
+ORDER BY total_tourists_per_province DESC;
+
+---------------------------------------------------------------
+-- 5) Spending efficiency by province (SAR per tourist)
+---------------------------------------------------------------
+SELECT
+    province,
+    ROUND(SUM(tourists_spending) * 1000.0 / SUM(tourists_number), 2) AS sar_per_tourist
+FROM saudi_tourism
+GROUP BY province
+ORDER BY sar_per_tourist DESC;
+
+---------------------------------------------------------------
+-- 6) Top 3 provinces per year by tourist count
+---------------------------------------------------------------
+SELECT
+    year,
+    province,
+    year_rank
+FROM (
+    SELECT
+        year,
+        province,
+        SUM(tourists_number) AS total_tourists,
+        RANK() OVER(PARTITION BY year ORDER BY SUM(tourists_number) DESC) AS year_rank
+    FROM saudi_tourism
+    GROUP BY year, province
+) AS ranked_data
+WHERE year_rank &lt;= 3
+ORDER BY year, year_rank;
+
+---------------------------------------------------------------
+-- 7) Revenue &amp; tourist share per tourism type
+---------------------------------------------------------------
+SELECT
+    tourism_type,
+    ROUND(SUM(tourists_number) * 100.0 / (SELECT SUM(tourists_number) FROM saudi_tourism), 2) AS tourist_count_percentage,
+    ROUND(SUM(tourists_spending) * 100.0 / (SELECT SUM(tourists_spending) FROM saudi_tourism), 2) AS spending_percentage
+FROM saudi_tourism
+GROUP BY tourism_type
+ORDER BY spending_percentage DESC;
+
+---------------------------------------------------------------
+-- 8) Year-over-year top provinces by spending
+---------------------------------------------------------------
+SELECT
+    year,
+    province,
+    total_tourists_spending,
+    province_rank
+FROM (
+    SELECT
+        year,
+        province,
+        SUM(tourists_spending) AS total_tourists_spending,
+        RANK() OVER(PARTITION BY year ORDER BY SUM(tourists_spending) DESC) AS province_rank
+    FROM saudi_tourism
+    GROUP BY year, province
+) AS ranked_data
+WHERE province_rank &lt;= 3
+ORDER BY year, province_rank;
+
+---------------------------------------------------------------
+-- 9) Year-over-year top provinces by tourists and spending
+---------------------------------------------------------------
+SELECT
+    year,
+    province,
+    total_tourists,
+    total_spending,
+    yoy_rank
+FROM (
+    SELECT
+        year,
+        province,
+        SUM(tourists_number) AS total_tourists,
+        SUM(tourists_spending) AS total_spending,
+        RANK() OVER(PARTITION BY year ORDER BY SUM(tourists_spending) DESC) AS yoy_rank
+    FROM saudi_tourism
+    GROUP BY year, province
+) AS yoy_table
+WHERE yoy_rank &lt;= 3
+ORDER BY year, yoy_rank;
+
+---------------------------------------------------------------
+-- 10) Tourists distribution by province &amp; tourism type
+---------------------------------------------------------------
+SELECT
+    province,
+    tourism_type,
+    SUM(tourists_number) AS total_tourists,
+    SUM(tourists_spending) AS total_spending
+FROM saudi_tourism
+GROUP BY province, tourism_type
+ORDER BY province, total_tourists DESC;
+
+---------------------------------------------------------------
+-- 11) Provinces where avg spending per trip is above global average
+---------------------------------------------------------------
+SELECT
+    province,
+    SUM(avg_spending_trip * tourists_number) * 1.0 / SUM(tourists_number) AS weighted_avg_spending
+FROM saudi_tourism
+GROUP BY province
+HAVING SUM(avg_spending_trip * tourists_number) * 1.0 / SUM(tourists_number) &gt;
+       (SELECT SUM(avg_spending_trip * tourists_number) * 1.0 / SUM(tourists_number) FROM saudi_tourism)
+ORDER BY weighted_avg_spending DESC;
+</string>
+			<key>view</key>
+			<string>SP_VIEW_CUSTOMQUERY</string>
+			<key>windowVerticalDividerPosition</key>
+			<real>0.0</real>
+		</dict>
+	</dict>
+	<key>encrypted</key>
+	<false/>
+	<key>format</key>
+	<string>connection</string>
+	<key>queryFavorites</key>
+	<array/>
+	<key>rdbms_type</key>
+	<string>mysql</string>
+	<key>rdbms_version</key>
+	<string>8.0.34</string>
+	<key>version</key>
+	<integer>1</integer>
+</dict>
+</plist>
